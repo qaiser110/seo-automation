@@ -1,0 +1,40 @@
+test-results
+node_modules
+
+tmp
+/data
+businesses_with_emails_incremental_*
+yellow_pages_data_incremental_*
+!done/yellow_pages_data_incremental_*
+!done-2/yellow_pages_data_incremental_*
+!data-w-emails/businesses_with_emails_incremental_*
+
+# Output
+.output
+.vercel
+.netlify
+.wrangler
+/.svelte-kit
+/build
+
+images
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.*
+!.env.example
+!.env.test
+
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+# Paraglide
+src/lib/paraglide
+
+# Sentry Config File
+.env.sentry-build-plugin
