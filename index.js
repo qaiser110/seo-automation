@@ -1,18 +1,37 @@
 import "dotenv/config";
 import axios from "axios";
+import { getJson } from "serpapi";
 import { supabase } from "./supabaseClient.js";
+import { sendEmail } from "./mailer.js";
 
 const SERP_API_KEY = process.env.SERP_API_KEY;
-const SEED_KEYWORD = process.env.SEED_KEYWORD;
+const SEED_KEYWORD = process.env.SEED_KEYWORD; // "t-shirts, hoodies, mugs"
+const EMAIL_IDEAS_QTY = 15;
+const SUGGESTIONS_PER_KEYWORD = 15;
 
 async function fetchKeywords() {
-  const url = `https://serpapi.com/search.json?q=${encodeURIComponent(
-    SEED_KEYWORD
-  )}&engine=google_autocomplete&api_key=${SERP_API_KEY}`;
-  const res = await axios.get(url);
-  const suggestions = res.data.suggestions || [];
+  const seedKeywords = SEED_KEYWORD.split(",").map((k) => k.trim());
+  let keywords = [];
 
-  const keywords = suggestions.map((s) => s.value).filter((k) => k.length > 10); // filter short/low intent terms
+  for (const seed of seedKeywords) {
+    const data = await getJson({
+      q: seed,
+      api_key: SERP_API_KEY,
+      engine: "google_autocomplete",
+      location: "United States",
+      google_domain: "google.com",
+      gl: "us",
+      hl: "en",
+    });
+
+    const suggestions = data.suggestions || [];
+    const seedKeywords = suggestions
+      .slice(0, SUGGESTIONS_PER_KEYWORD)
+      .map((s) => s.value)
+      .filter((k) => k.length > 10);
+
+    keywords = [...keywords, ...seedKeywords];
+  }
 
   return keywords;
 }
@@ -32,22 +51,26 @@ async function generateContentIdeas() {
   const { data, error } = await supabase
     .from("keywords")
     .select("keyword")
-    .limit(5)
+    .limit(EMAIL_IDEAS_QTY)
     .order("created_at", { ascending: false });
 
   if (error) {
     console.error("Fetch error:", error);
-    return;
+    return [];
   }
 
-  const ideas = data.map((d) => `How to ${d.keyword}`);
-  console.log("📌 Weekly Content Ideas:\n", ideas.slice(0, 3).join("\n"));
+  return data.map((d) => `Buy ${d.keyword} at discount`);
 }
 
 async function main() {
   const keywords = await fetchKeywords();
   await storeKeywords(keywords);
-  await generateContentIdeas();
+
+  const ideas = await generateContentIdeas();
+  const content = ideas.slice(0, EMAIL_IDEAS_QTY).join("\n");
+  console.log("📌 Weekly Content Ideas:\n", content);
+
+  await sendEmail("Your Weekly Content Ideas", content);
 }
 
 main();
