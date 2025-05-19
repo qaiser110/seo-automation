@@ -24,7 +24,7 @@ jobs:
         env:
           EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
           SERP_API_KEY: ${{ secrets.SERP_API_KEY }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SEED_KEYWORD: ${{ vars.SEED_KEYWORD }}
           EMAIL_USER: ${{ vars.EMAIL_USER }}
