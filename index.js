@@ -71,7 +71,7 @@ async function main() {
 
   const ideas = keywords;
   // const content = ideas.slice(0, totalIdeasToEmail).join("\n");
-  const content = ideas.map((d) => `Buy ${d.keyword} at discount`).join("\n");
+  const content = ideas.map((d) => `Buy ${d} at discount`).join("\n");
 
   // console.log("📌 Weekly Content Ideas:\n", content);
 
