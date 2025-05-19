@@ -1,17 +1,18 @@
 import "dotenv/config";
-import axios from "axios";
+// import axios from "axios";
 import { getJson } from "serpapi";
 import { supabase } from "./supabaseClient.js";
 import { sendEmail } from "./mailer.js";
 
 const SERP_API_KEY = process.env.SERP_API_KEY;
 const SEED_KEYWORD = process.env.SEED_KEYWORD; // "t-shirts, hoodies, mugs"
-const EMAIL_IDEAS_QTY = 15;
-const SUGGESTIONS_PER_KEYWORD = 15;
+const seedKeywords = SEED_KEYWORD.split(",").map((k) => k.trim());
+
+const SUGGESTIONS_PER_KEYWORD = 3;
+// const totalIdeasToEmail = SUGGESTIONS_PER_KEYWORD * seedKeywords.length;
 
 async function fetchKeywords() {
-  const seedKeywords = SEED_KEYWORD.split(",").map((k) => k.trim());
-  let keywords = [];
+  let allKeywords = [];
 
   for (const seed of seedKeywords) {
     const data = await getJson({
@@ -25,15 +26,15 @@ async function fetchKeywords() {
     });
 
     const suggestions = data.suggestions || [];
-    const seedKeywords = suggestions
-      .slice(0, SUGGESTIONS_PER_KEYWORD)
+    const filteredKeywords = suggestions
       .map((s) => s.value)
-      .filter((k) => k.length > 10);
+      .filter((k) => k.length > 10)
+      .slice(0, SUGGESTIONS_PER_KEYWORD);
 
-    keywords = [...keywords, ...seedKeywords];
+    allKeywords = [...allKeywords, ...filteredKeywords];
   }
 
-  return keywords;
+  return allKeywords;
 }
 
 async function storeKeywords(keywords) {
@@ -47,28 +48,32 @@ async function storeKeywords(keywords) {
   }
 }
 
-async function generateContentIdeas() {
-  const { data, error } = await supabase
-    .from("keywords")
-    .select("keyword")
-    .limit(EMAIL_IDEAS_QTY)
-    .order("created_at", { ascending: false });
+// async function generateContentIdeas() {
+//   const { data, error } = await supabase
+//     .from("keywords")
+//     .select("keyword")
+//     .limit(totalIdeasToEmail)
+//     .order("created_at", { ascending: false });
 
-  if (error) {
-    console.error("Fetch error:", error);
-    return [];
-  }
+//   if (error) {
+//     console.error("Fetch error:", error);
+//     return [];
+//   }
 
-  return data.map((d) => `Buy ${d.keyword} at discount`);
-}
+//   return data.map((d) => `Buy ${d.keyword} at discount`);
+// }
 
 async function main() {
   const keywords = await fetchKeywords();
   await storeKeywords(keywords);
 
-  const ideas = await generateContentIdeas();
-  const content = ideas.slice(0, EMAIL_IDEAS_QTY).join("\n");
-  console.log("📌 Weekly Content Ideas:\n", content);
+  // const ideas = await generateContentIdeas();
+
+  const ideas = keywords;
+  // const content = ideas.slice(0, totalIdeasToEmail).join("\n");
+  const content = ideas.map((d) => `Buy ${d.keyword} at discount`).join("\n");
+
+  // console.log("📌 Weekly Content Ideas:\n", content);
 
   await sendEmail("Your Weekly Content Ideas", content);
 }
